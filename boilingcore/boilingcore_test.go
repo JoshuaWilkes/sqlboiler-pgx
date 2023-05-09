@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/volatiletech/sqlboiler/v4/importers"
+	"github.com/JoshuaWilkes/sqlboiler-pgx/importers"
 
 	"github.com/volatiletech/sqlboiler/v4/drivers"
 	"github.com/volatiletech/sqlboiler/v4/drivers/mocks"
@@ -116,7 +116,7 @@ func testNew(t *testing.T, aliases Aliases) {
 		fmt.Println()
 	}
 
-	cmd = exec.Command("go", "mod", "edit", fmt.Sprintf("-replace=github.com/volatiletech/sqlboiler/v4=%s", filepath.Dir(string(goModFilePath))))
+	cmd = exec.Command("go", "mod", "edit", fmt.Sprintf("-replace=github.com/JoshuaWilkes/sqlboiler-pgx=%s", filepath.Dir(string(goModFilePath))))
 	cmd.Dir = state.Config.OutFolder
 	cmd.Stderr = buf
 

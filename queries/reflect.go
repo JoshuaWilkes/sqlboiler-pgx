@@ -13,9 +13,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/JoshuaWilkes/sqlboiler-pgx/boil"
 	"github.com/friendsofgo/errors"
 	"github.com/jackc/pgx/v5"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/strmangle"
 )
 
