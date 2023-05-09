@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/JoshuaWilkes/sqlboiler-pgx/importers"
+	"github.com/volatiletech/sqlboiler/v4/importers"
 
 	"github.com/volatiletech/sqlboiler/v4/drivers"
 	"github.com/volatiletech/sqlboiler/v4/drivers/mocks"
