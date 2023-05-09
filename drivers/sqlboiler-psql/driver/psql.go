@@ -4,6 +4,7 @@
 package driver
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"encoding/base64"
@@ -12,6 +13,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/volatiletech/sqlboiler/v4/importers"
 
 	"github.com/friendsofgo/errors"
@@ -40,7 +43,7 @@ func Assemble(config drivers.Config) (dbinfo *drivers.DBInfo, err error) {
 // to the database connection.
 type PostgresDriver struct {
 	connStr        string
-	conn           *sql.DB
+	conn           *PGXConnContextExecutor
 	version        int
 	addEnumTypes   bool
 	enumNullPrefix string
@@ -78,6 +81,29 @@ func (p *PostgresDriver) Templates() (map[string]string, error) {
 	return tpls, nil
 }
 
+type PGXConnContextExecutor struct {
+	*pgx.Conn
+}
+
+func (p *PGXConnContextExecutor) Exec(query string, args ...interface{}) (pgconn.CommandTag, error) {
+	return p.Conn.Exec(context.Background(), query, args...)
+}
+func (p *PGXConnContextExecutor) Query(query string, args ...interface{}) (pgx.Rows, error) {
+	return p.Conn.Query(context.Background(), query, args...)
+}
+func (p *PGXConnContextExecutor) QueryRow(query string, args ...interface{}) pgx.Row {
+	return p.Conn.QueryRow(context.Background(), query, args...)
+}
+func (p *PGXConnContextExecutor) ExecContext(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error) {
+	return p.Conn.Exec(ctx, query, args...)
+}
+func (p *PGXConnContextExecutor) QueryContext(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error) {
+	return p.Conn.Query(ctx, query, args...)
+}
+func (p *PGXConnContextExecutor) QueryRowContext(ctx context.Context, query string, args ...interface{}) pgx.Row {
+	return p.Conn.QueryRow(ctx, query, args...)
+}
+
 // Assemble all the information we need to provide back to the driver
 func (p *PostgresDriver) Assemble(config drivers.Config) (dbinfo *drivers.DBInfo, err error) {
 	defer func() {
@@ -103,13 +129,14 @@ func (p *PostgresDriver) Assemble(config drivers.Config) (dbinfo *drivers.DBInfo
 	p.addEnumTypes, _ = config[drivers.ConfigAddEnumTypes].(bool)
 	p.enumNullPrefix = strmangle.TitleCase(config.DefaultString(drivers.ConfigEnumNullPrefix, "Null"))
 	p.connStr = PSQLBuildQueryString(user, pass, dbname, host, port, sslmode)
-	p.conn, err = sql.Open("postgres", p.connStr)
+	conn, err := pgx.Connect(context.Background(), p.connStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "sqlboiler-psql failed to connect to database")
 	}
+	p.conn = &PGXConnContextExecutor{conn}
 
 	defer func() {
-		if e := p.conn.Close(); e != nil {
+		if e := p.conn.Close(context.Background()); e != nil {
 			dbinfo = nil
 			err = e
 		}
@@ -674,7 +701,7 @@ func (p *PostgresDriver) PrimaryKeyInfo(schema, tableName string) (*drivers.Prim
 	where  constraint_name = $1 and table_name = $2 and table_schema = $3
 	order by kcu.ordinal_position;`
 
-	var rows *sql.Rows
+	var rows pgx.Rows
 	if rows, err = p.conn.Query(queryColumns, pkey.Name, tableName, schema); err != nil {
 		return nil, err
 	}
@@ -728,7 +755,7 @@ func (p *PostgresDriver) ForeignKeyInfo(schema, tableName string) ([]drivers.For
 		strings.Join(whereConditions, " and "),
 	)
 
-	var rows *sql.Rows
+	var rows pgx.Rows
 	var err error
 	if rows, err = p.conn.Query(query, tableName, schema); err != nil {
 		return nil, err

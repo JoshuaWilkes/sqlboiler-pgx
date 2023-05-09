@@ -109,7 +109,7 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Use correct column alias during soft delete
-- Use a default "table.*" for model queries
+- Use a default "table.\*" for model queries
 
 ## [v4.9.1] - 2022-04-08
 
@@ -163,7 +163,7 @@ Versioning](http://semver.org/spec/v2.0.0.html).
   so it can retain the stack trace. This supports the best practice of using
   errors.Is() anyway and will eventually become the default behavior in
   a breaking v5 (thanks @jhnj)
-- Add support for * as a wildcard for white/blacklisting columns. See readme
+- Add support for \* as a wildcard for white/blacklisting columns. See readme
   for details (thanks @Yoshiji)
 - Add missing function `func (modelQuery) UpdateAllGP(...)` (thanks @MeanSquaredError)
 - Add support for generated columns
@@ -878,9 +878,9 @@ difference.
 
 ### Fixed
 
-- Fixed a bug in Bind() where all the given `*sql.Rows` would be consumed
+- Fixed a bug in Bind() where all the given `pgx.Rows` would be consumed
   even in the event where we were binding to a single object. This allows
-  for slower scanning of a `*sql.Rows` object.
+  for slower scanning of a `pgx.Rows` object.
 - Fixed a problem in eager loading where the same object would be queried
   for multiple times. This was simply inefficient and so we now de-duplicate
   the ids before creating the query.
